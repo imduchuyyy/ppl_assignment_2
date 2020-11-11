@@ -38,11 +38,13 @@ var_declare: VAR COLON ids_list SEMI;
 
 ids_list: id_declare (COMMA ids_list) | id_declare;
 
-id_declare: ID | (ID ASSIGN type_list) | array_declare;
+id_declare: ID (array_declares)? (ASSIGN type_list)?;
 
-array_declare: array_id | (array_id ASSIGN ARRAY);
+array_declares: array (array_declares) | array;
 
-array_id: ID (LSB INTLIT RSB)+;
+array: (LSB INTLIT RSB);
+
+array_id: ID array_declares;
 
 type_list:
 	INTLIT
@@ -57,14 +59,15 @@ func_declare: header_stm (paramater_stm)? body_stm;
 header_stm: FUNCTION COLON ID;
 paramater_stm: PARAMETER COLON paramater_list;
 paramater_list: id_var (COMMA paramater_list) | id_var;
-body_stm: BODY COLON statement_list ENDBODY DOT;
-statement_list: (statement)*;
+body_stm:
+	BODY COLON (var_declare_list)? statement_list ENDBODY DOT;
+statement_list: statement statement_list | statement;
 id_var: (ID | array_id);
 
+var_declare_list: var_declare var_declare_list | var_declare;
+
 statement:
-	var_declare
-	| func_declare
-	| assign_statement
+	assign_statement
 	| if_statement
 	| for_statement
 	| while_statement
@@ -74,33 +77,35 @@ statement:
 	| function_call_statement
 	| return_statement;
 
-assign_statement: id_var ASSIGN expressions SEMI;
+assign_statement: (ID | array_id) ASSIGN expressions SEMI;
 
 // IF STATEMENT
 if_statement:
-	IF expressions THEN statement_list (else_if_statement)? (
-		else_statement
-	)? ENDIF DOT;
+	if_then_statement (else_if_statements)? (else_statement)? ENDIF DOT;
+if_then_statement:
+	IF expressions THEN var_declare_list? statement_list?;
+else_if_statements:
+	else_if_statement else_if_statements
+	| else_if_statement;
 else_if_statement:
-	ELSEIF expressions THEN statement_list (else_if_statement)
-	| (ELSEIF expressions THEN statement_list);
-else_statement: ELSE statement_list;
+	ELSEIF expressions THEN var_declare_list? statement_list?;
+else_statement: ELSE var_declare_list? statement_list?;
 
 // FOR STATEMENT
 for_statement:
-	FOR LB for_condition RB DO statement_list ENDFOR DOT;
-for_condition: (id_var ASSIGN expressions) COMMA expressions COMMA (
-		(id_var ASSIGN expressions)
+	FOR LB for_condition RB DO var_declare_list? statement_list? ENDFOR DOT;
+for_condition: (ID ASSIGN expressions) COMMA expressions COMMA (
+		(ID ASSIGN expressions)
 		| expressions
 	);
 
 // WHILE STATEMENT
 while_statement:
-	WHILE expressions DO statement_list ENDWHILE DOT;
+	WHILE expressions DO var_declare_list? statement_list? ENDWHILE DOT;
 
 // DO WHILE STATEMENT
 do_while_statement:
-	DO statement_list WHILE expressions ENDWHILE DOT;
+	DO var_declare_list? statement_list? WHILE expressions ENDWHILE DOT;
 
 // BREAK STATEMENT
 break_statement: BREAK SEMI;
