@@ -46,23 +46,17 @@ array: (LSB INTLIT RSB);
 
 array_id: ID array_declares;
 
-type_list:
-	INTLIT
-	| FLOATLIT
-	| (TRUE | FALSE)
-	| STRINGLIT
-	| array_id;
+type_list: INTLIT | FLOATLIT | (TRUE | FALSE) | STRINGLIT;
 
 // FUNCTION DECLARE
 func_declare: header_stm (paramater_stm)? body_stm;
 
 header_stm: FUNCTION COLON ID;
 paramater_stm: PARAMETER COLON paramater_list;
-paramater_list: id_var (COMMA paramater_list) | id_var;
+paramater_list: ids_list (COMMA paramater_list) | ids_list;
 body_stm:
-	BODY COLON (var_declare_list)? statement_list ENDBODY DOT;
+	BODY COLON (var_declare_list)? statement_list? ENDBODY DOT;
 statement_list: statement statement_list | statement;
-id_var: (ID | array_id);
 
 var_declare_list: var_declare var_declare_list | var_declare;
 
@@ -121,17 +115,17 @@ function_call_statement:
 return_statement: RETURN expressions SEMI;
 
 expressions:
-	exp1 EQUALOP exp1
-	| exp1 NOTEQUALOP exp1
-	| exp1 LESSOP exp1
-	| exp1 LESSOREQUALOP exp1
-	| exp1 GREATEROP exp1
-	| exp1 GREATEOREQUALOP exp1
-	| exp1 NOTEQUALOPFLOAT exp1
-	| exp1 LESSOPDOT exp1
-	| exp1 LESSOREQUALOPDOT exp1
-	| exp1 GREATEROPDOT exp1
-	| exp1 GREATEOREQUALOPDOT exp1
+	exp1 EQUALOP exp2
+	| exp1 NOTEQUALOP exp2
+	| exp1 LESSOP exp2
+	| exp1 LESSOREQUALOP exp2
+	| exp1 GREATEROP exp2
+	| exp1 GREATEOREQUALOP exp2
+	| exp1 NOTEQUALOPFLOAT exp2
+	| exp1 LESSOPDOT exp2
+	| exp1 LESSOREQUALOPDOT exp2
+	| exp1 GREATEROPDOT exp2
+	| exp1 GREATEOREQUALOPDOT exp2
 	| exp1;
 exp1: exp1 ANDOP exp2 | exp1 OROP exp2 | exp2;
 exp2:
@@ -157,9 +151,11 @@ operand:
 	| index_operator;
 
 sub_expression: LB expressions RB;
-function_call: ID LB list_expression? RB;
-list_expression: type_list ( COMMA list_expression)*;
-index_operator: ID LSB expressions RSB;
+function_call: ID LB list_expression RB;
+list_expression:
+	expressions (COMMA list_expression)
+	| expressions;
+index_operator: ID LSB list_expression RSB;
 // IDENTIFIER
 ID: [a-z][a-zA-Z0-9_]*;
 

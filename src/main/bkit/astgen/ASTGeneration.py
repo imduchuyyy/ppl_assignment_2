@@ -39,12 +39,6 @@ class ASTGeneration(BKITVisitor):
             return self.visit(ctx.var_declare()) + self.visit(ctx.var_declare_list())
         else:
             return self.visit(ctx.var_declare())
-        
-    def visitId_var(self, ctx:BKITParser.Id_varContext):
-        if ctx.ID():
-            return [VarDecl(Id(ctx.ID().getText()), None, None)]
-        else:
-            return [self.visit(ctx.array_id())]
 
     # --------------------------- ARRAY DECLARE -----------------------------
     def visitArray_declares(self, ctx:BKITParser.Array_declaresContext):
@@ -75,14 +69,14 @@ class ASTGeneration(BKITVisitor):
     
     def visitParamater_list(self, ctx:BKITParser.Paramater_listContext):
         if ctx.paramater_list():
-            return self.visit(ctx.id_var()) + self.visit(ctx.paramater_list())
+            return self.visit(ctx.ids_list()) + self.visit(ctx.paramater_list())
         else: 
-            return self.visit(ctx.id_var())
+            return self.visit(ctx.ids_list())
 
     #------------------- BODY STATEMENT -----------------------
     def visitBody_stm(self, ctx:BKITParser.Body_stmContext):
         list_varDecl = self.visit(ctx.var_declare_list()) if ctx.var_declare_list() else []
-        list_statement = self.visit(ctx.statement_list())
+        list_statement = self.visit(ctx.statement_list()) if ctx.statement_list() else []
         return (list_varDecl, list_statement) # tuple
     
     def visitStatement_list(self, ctx:BKITParser.Statement_listContext):
@@ -96,7 +90,7 @@ class ASTGeneration(BKITVisitor):
     
     #---------------------- FUNCTION DECLARE ----------------
     def visitAssign_statement(self, ctx:BKITParser.Assign_statementContext):
-        lhs = ctx.ID().getText() if ctx.ID() else self.visit(ctx.array_id())
+        lhs = Id(ctx.ID().getText()) if ctx.ID() else self.visit(ctx.array_id())
         rhs = self.visit(ctx.expressions())
         return Assign(lhs, rhs)
     
@@ -138,7 +132,7 @@ class ASTGeneration(BKITVisitor):
         return For(id, expr1, expr2, expr3, (varsDecl, statements))
     
     def visitFor_condition(self, ctx:BKITParser.For_conditionContext):
-        id = Id(ctx.ID().getText())
+        id = Id(ctx.ID(0).getText())
         expr1 = self.visit(ctx.expressions(0))
         expr2 = self.visit(ctx.expressions(1))
         expr3 = self.visit(ctx.expressions(2))
@@ -178,8 +172,99 @@ class ASTGeneration(BKITVisitor):
     
     #---------------------- EXPRESSION ---------------------------
     def visitExpressions(self, ctx: BKITParser.ExpressionsContext):
+        if ctx.EQUALOP():
+            return BinaryOp(ctx.EQUALOP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.NOTEQUALOP():
+            return BinaryOp(ctx.NOTEQUALOP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.LESSOP():
+            return BinaryOp(ctx.LESSOP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.LESSOREQUALOP():
+            return BinaryOp(ctx.LESSOREQUALOP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.GREATEROP():
+            return BinaryOp(ctx.GREATEROP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.GREATEOREQUALOP():
+            return BinaryOp(ctx.GREATEOREQUALOP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.NOTEQUALOPFLOAT():
+            return BinaryOp(ctx.NOTEQUALOPFLOAT().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.LESSOPDOT():
+            return BinaryOp(ctx.LESSOPDOT().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.LESSOREQUALOPDOT():
+            return BinaryOp(ctx.LESSOREQUALOPDOT().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.GREATEROPDOT():
+            return BinaryOp(ctx.GREATEROPDOT().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.GREATEOREQUALOPDOT():
+            return BinaryOp(ctx.GREATEOREQUALOPDOT().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        else:
+            return self.visit(ctx.exp1())
+    
+    def visitExp1(self, ctx: BKITParser.Exp1Context):
+        if ctx.ANDOP():
+            return BinaryOp(ctx.ANDOP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        elif ctx.OROP():
+            return BinaryOp(ctx.OROP().getText(), self.visit(ctx.exp1()), self.visit(ctx.exp2()))
+        else:
+            return self.visit(ctx.exp2())
+    
+    def visitExp2(self, ctx: BKITParser.Exp2Context):
+        if ctx.ADDOP():
+            return BinaryOp(ctx.ADDOP().getText(), self.visit(ctx.exp2()), self.visit(ctx.exp3()))
+        elif ctx.ADDOPDOT():
+            return BinaryOp(ctx.ADDOPDOT().getText(), self.visit(ctx.exp2()), self.visit(ctx.exp3()))
+        elif ctx.SUBOP():
+            return BinaryOp(ctx.SUBOP().getText(), self.visit(ctx.exp2()), self.visit(ctx.exp3()))
+        elif ctx.SUBOPDOT():
+            return BinaryOp(ctx.SUBOPDOT().getText(), self.visit(ctx.exp2()), self.visit(ctx.exp3()))
+        else:
+            return self.visit(ctx.exp3())
         
+    def visitExp3(self, ctx: BKITParser.Exp3Context):
+        if ctx.MULOP():
+            return BinaryOp(ctx.MULOP().getText(), self.visit(ctx.exp3()), self.visit(ctx.exp4()))
+        elif ctx.MULOPDOT():
+            return BinaryOp(ctx.MULOPDOT().getText(), self.visit(ctx.exp3()), self.visit(ctx.exp4()))
+        elif ctx.DIVOP():
+            return BinaryOp(ctx.DIVOP().getText(), self.visit(ctx.exp3()), self.visit(ctx.exp4()))
+        elif ctx.DIVOPDOT():
+            return BinaryOp(ctx.DIVOPDOT().getText(), self.visit(ctx.exp3()), self.visit(ctx.exp4()))
+        elif ctx.MODOP():
+            return BinaryOp(ctx.MODOP().getText(), self.visit(ctx.exp3()), self.visit(ctx.exp4()))
+        else:
+            return self.visit(ctx.exp4())
+    
+    def visitExp4(self, ctx: BKITParser.Exp3Context):
+        if(ctx.NOTOP()):
+            return UnaryOp(ctx.NOTOP().getText(), self.visit(ctx.operand()))
+        else:
+            return self.visit(ctx.operand())
 
+    def visitOperand(self, ctx: BKITParser.OperandContext):
+        if ctx.ID():
+            return Id(ctx.ID().getText())
+        elif ctx.type_list():
+            return self.visit(ctx.type_list())
+        elif ctx.sub_expression():
+            return self.visit(ctx.sub_expression())
+        elif ctx.array_id():
+            return self.visit(ctx.array_id())
+        elif ctx.function_call():
+            return self.visit(ctx.function_call())
+        elif ctx.index_operator():
+            return self.visit(ctx.index_operator())
+
+    def visitSub_expression(self, ctx: BKITParser.Sub_expressionContext):
+        return self.visit(ctx.expressions())
+    
+    def visitFunction_call(self, ctx: BKITParser.Function_callContext):
+        return CallExpr(Id(ctx.ID().getText()), self.visit(ctx.list_expression()))
+    
+    def visitList_expression(self, ctx: BKITParser.List_expressionContext):
+        if ctx.list_expression():
+            return self.visit(ctx.expressions()) + self.visit(ctx.list_expression())
+        else:
+            return self.visit(ctx.expressions())
+        
+    def visitIndex_operator(self, ctx: BKITParser.Index_operatorContext):
+        return ArrayCell(Id(ctx.ID().getText()), self.visit(ctx.list_expression()))
 
     # --------------------- TYPE LIST ----------------------------
     def visitType_list(self, ctx:BKITParser.Type_listContext):
@@ -188,7 +273,7 @@ class ASTGeneration(BKITVisitor):
         elif ctx.FLOATLIT():
             return FloatLiteral(float(ctx.FLOATLIT().getText()))
         elif ctx.STRINGLIT():
-            return StringLiteral(float(ctx.STRINGLIT().getText()))
+            return StringLiteral(str(ctx.STRINGLIT().getText()))
         elif ctx.TRUE():
             return BooleanLiteral(bool(ctx.TRUE().getText()))
         elif ctx.FALSE():
