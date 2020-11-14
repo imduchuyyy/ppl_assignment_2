@@ -88,7 +88,7 @@ class ASTGeneration(BKITVisitor):
     def visitStatement(self, ctx:BKITParser.StatementContext):
         return [self.visit(ctx.getChild(0))]
     
-    #---------------------- FUNCTION DECLARE ----------------
+    #---------------------- ASSIGN STATEMENT ----------------
     def visitAssign_statement(self, ctx:BKITParser.Assign_statementContext):
         lhs = Id(ctx.ID().getText()) if ctx.ID() else self.visit(ctx.array_id())
         rhs = self.visit(ctx.expressions())
@@ -98,7 +98,7 @@ class ASTGeneration(BKITVisitor):
     def visitIf_statement(self, ctx:BKITParser.If_statementContext):
         ifThenStm = self.visit(ctx.if_then_statement())
         elseIfStm = self.visit(ctx.else_if_statements()) if ctx.else_if_statements() else []
-        elseStm  = self.visit(ctx.else_statement())
+        elseStm  = self.visit(ctx.else_statement()) if ctx.else_statement() else []
         return If(ifThenStm + elseIfStm, elseStm)
 
     def visitIf_then_statement(self, ctx:BKITParser.If_then_statementContext):
@@ -168,7 +168,8 @@ class ASTGeneration(BKITVisitor):
     
     #---------------------- RETURN STATEMENT ---------------------
     def visitReturn_statement(self, ctx: BKITParser.Return_statementContext):
-        return Return(self.visit(ctx.expressions()))
+        expr = self.visit(ctx.expressions()) if ctx.expressions() else None
+        return Return(expr)
     
     #---------------------- EXPRESSION ---------------------------
     def visitExpressions(self, ctx: BKITParser.ExpressionsContext):
@@ -259,9 +260,9 @@ class ASTGeneration(BKITVisitor):
     
     def visitList_expression(self, ctx: BKITParser.List_expressionContext):
         if ctx.list_expression():
-            return self.visit(ctx.expressions()) + self.visit(ctx.list_expression())
+            return [self.visit(ctx.expressions())] + self.visit(ctx.list_expression())
         else:
-            return self.visit(ctx.expressions())
+            return [self.visit(ctx.expressions())]
         
     def visitIndex_operator(self, ctx: BKITParser.Index_operatorContext):
         return ArrayCell(Id(ctx.ID().getText()), self.visit(ctx.list_expression()))
@@ -278,3 +279,14 @@ class ASTGeneration(BKITVisitor):
             return BooleanLiteral(bool(ctx.TRUE().getText()))
         elif ctx.FALSE():
             return BooleanLiteral(bool(ctx.FALSE().getText()))
+        elif ctx.array_lit():
+            return self.visit(ctx.array_lit())
+
+    def visitArray_lit(self, ctx:BKITParser.Array_litContext):
+        return ArrayLiteral(self.visit(ctx.array_lits()))
+    
+    def visitArray_lits(self, ctx:BKITParser.Array_litsContext):
+        if ctx.array_lits():
+            return [self.visit(ctx.type_list())]  + self.visit(ctx.array_lits())
+        else :
+            return [self.visit(ctx.type_list())]

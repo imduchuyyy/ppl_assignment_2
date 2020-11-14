@@ -46,7 +46,12 @@ array: (LSB INTLIT RSB);
 
 array_id: ID array_declares;
 
-type_list: INTLIT | FLOATLIT | (TRUE | FALSE) | STRINGLIT;
+type_list:
+	INTLIT
+	| FLOATLIT
+	| (TRUE | FALSE)
+	| STRINGLIT
+	| array_lit;
 
 // FUNCTION DECLARE
 func_declare: header_stm (paramater_stm)? body_stm;
@@ -99,7 +104,7 @@ while_statement:
 
 // DO WHILE STATEMENT
 do_while_statement:
-	DO var_declare_list? statement_list? WHILE expressions ENDWHILE DOT;
+	DO var_declare_list? statement_list? WHILE expressions ENDDO DOT;
 
 // BREAK STATEMENT
 break_statement: BREAK SEMI;
@@ -112,7 +117,7 @@ function_call_statement:
 	ID LB expressions? (COMMA expressions)* RB SEMI;
 
 // RETUNR STATEMENT
-return_statement: RETURN expressions SEMI;
+return_statement: RETURN expressions? SEMI;
 
 expressions:
 	exp1 EQUALOP exp2
@@ -262,10 +267,8 @@ fragment FLOATLIT_LIST: FLOATLIT (COMMA FLOATLIT)*;
 fragment STRING_LIST: STRINGLIT ( COMMA STRINGLIT)*;
 fragment BOOLEAN_LIST: (TRUE | FALSE) (COMMA (TRUE | FALSE))*;
 
-ARRAY: (LP INTLIT_LIST RP)
-	| ( LP FLOATLIT_LIST RP)
-	| ( LP STRING_LIST RP)
-	| ( LP BOOLEAN_LIST RP);
+array_lit: LP array_lits RP;
+array_lits: type_list COMMA array_lits | type_list;
 // fail
 
 WS: [ \t\r\n]+ -> skip;
